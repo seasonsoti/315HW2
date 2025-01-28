@@ -183,10 +183,6 @@ topSongs <- music |>
   summarize(count = n(), .groups = "drop") |>
   arrange(desc(count)) |>
   slice_head(n = 10)
-
-
-
-
 ```
 
 
