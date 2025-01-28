@@ -1,0 +1,194 @@
+---
+title: "SDS 315 Homework 2"
+subtitle: "Season Soti ss227985"
+output: pdf_document
+date: "2025-01-25"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(kableExtra)
+```
+
+```{r}
+utProfs <- read.csv("profs.csv")
+music <- read.csv("billboard.csv")
+bike <- read.csv("bikeshare.csv")
+metro <- read.csv("capMetro_UT.csv")
+metro = mutate(metro,
+day_of_week = factor(day_of_week,
+levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+month = factor(month,
+levels=c("Sep", "Oct","Nov")))
+```
+
+***Problem 1: Beauty, or not, in the classroom***
+
+*Part A*
+```{r}
+ggplot(utProfs, aes(x = eval)) +
+  geom_histogram(fill = "blue", bins = 25) +
+  labs(x = "Course Evaluations", y = "# of Evals") +
+  theme_bw()
+```
+This graph is a distribution of the average scores in the UT Austin course evaluation. An interesting fact that I noticed is that no professor had less than a 2 on their evaluation average, which is shocking because the data set includes over 400 evaluations.
+
+*Part B*
+```{r}
+ggplot(utProfs, aes(x = native, y = eval, fill = native)) +
+  geom_boxplot() +
+  labs(
+    x = "Is the Professor a Native Speaker?",
+    y = "Evaluation Score"
+  ) +
+  theme_bw()
+```
+These box-and-whisker plots demonstrate the distribution between native and non-native professors' course evaluations at UT Austin. I find this interesting because the professors that don't speak English natively have lower average scores, but it makes sense in context because it is likely that students with these professors are also having a more difficult time understanding their lectures. 
+
+*Part C*
+```{r}
+ggplot(utProfs, aes(x = eval)) +
+  geom_histogram(binwidth = 0.25, fill = "blue") +
+  facet_wrap(~ gender, labeller = 
+               labeller(gender = c("male" = "Male", "female" = "Female"))) +
+  theme_bw() +
+  labs(
+    title = "Distribution of Course Evaluation Scores in Male and Female Professors", x = "Evaluation Score", y = "Count"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+This plot is comparing the distribution of eval scores between male and female professors at UT Austin. In the plot, it can be seen that male professors scores are more concentrated in the higher score range, with female professor scores being much more varied.
+
+*Part D*
+```{r}
+ggplot(utProfs, aes(x = beauty, y = eval)) +
+  geom_point() +
+  theme_bw() +
+  labs(
+    title = "Correlation between Eval Score and Beauty Score", x = "Beauty Score", y = "Evaluation Score"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+```
+This graph shows a visualization of a professor's evaluation score and beauty score through the use of a scatter plot. As we can see, there does appear to me a slight correlation between these 2 scores, possibly reflecting a slight bias that students may have towards a teachers' teaching based on their attractiveness.
+
+***Problem 2: Bike Sharing***
+
+*Plot 1*
+```{r}
+hourAvg <- bike |>
+  group_by(hr) |>
+  summarize(avgRentals=mean(total))
+
+ggplot(hourAvg, aes(x = hr, y = avgRentals)) +
+  geom_line(linewidth = 1, color = "blue") +
+  theme_bw() +
+  labs(
+    x = "Hour of the Day",
+    y = "Average # of Rentals",
+    title = "Average Bike Rentals each Hour"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+To create this plot, I took all the rentals in the data set and divided them into what time of the day they were rented and averaged the amount of rentals per day as well. Then, I created a line plot to visualize this data. The x-axis represents the hour of the day and the y-axis represents the average number of bikes that are being rented. Clearly, it can be seen that the peak bike rental hours are roughly around 9am and 5pm, which is what is traditionally considered a working day in the United States. Therefore, it can be inferred that a majority of people that utilize D.C.'s Capital Bikeshare system conform to this idea of a work day.
+
+*Plot 2*
+```{r}
+avgHourlyW <- bike |>
+  group_by(hr, workingday) |>
+  summarize(avgRentals = mean(total))
+
+ggplot(avgHourlyW, aes(x= hr, y= avgRentals)) +
+  geom_line(size = 1, color = "blue") +
+  labs(
+    title = "Average Bike Rentals Per Hour",
+    x = "Hour of the Day",
+    y = "Number of Average Rentals"
+  ) +
+  facet_wrap(~ workingday, labeller = 
+               labeller(workingday = c("0" = "Non-working Day", "1" = "Working Day"))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+In order to create the plot above, I created a new data frame that only includes the hourly breakdown, whether or not it was a working day, and the average amount of bikes rented. Then I created 2 line plots using the ggplot package divided by whether or not the data point was taken on a working day or non-working day. Interestingly, the graph follows the hypothesis that I made earlier, where the work day is the biggest influence on bike rentals.
+
+*Plot 3*
+```{r}
+am9bike <- bike |>
+  filter(hr == 9) |>
+  group_by(weathersit, workingday) |>
+  summarize(avg_rentals = mean(total), .groups = "drop")
+
+ggplot(am9bike, aes(x= factor(weathersit), y = avg_rentals, fill = factor(weathersit)))+
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Average Rides at 9AM seperated by weather conditions",
+    x = "Weather Conditions",
+    y = "Average Rentals"
+  ) +
+  facet_wrap(~ workingday, labeller = as_labeller(c(`0` = "Non-Working Day", `1` = "Working Day"))) +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) 
+```
+In order to create the plot above, I first created a new data frame that filtered the data to only include statistics that occurred at hour 9, then grouped the data by the weather situation and whether or not it was a working day. Then, using the summarize function, I calculated the average number of bikes rented per combination of factors. Using this data and ggplot2, I created a faceted bar plot, dividing the graph into 2 separate sides based on whether it was or wasn't a working day. This highlights the influence of weather conditions and working day on bike rentals, showing that there are more riders during working days regardless of rain or shine.
+
+***Problem 3 - Capital Metro UT Ridership***
+
+*Question 1*
+```{r}
+avgMetro <- metro |>
+  group_by(hour_of_day, day_of_week, month) |>
+  summarize(avg_boardings = mean(boarding, na.rm = TRUE))
+  
+ggplot(avgMetro, aes(x = hour_of_day, y = avg_boardings, color = month, group = month)) +
+  geom_line() +
+  facet_wrap(~day_of_week, ncol = 2) +
+  theme_bw() +
+  labs(
+    title = "Average Boardings by Hour of Day, Day of Week, and Month",
+    x = "Hour of Day",
+    y = "Average Boardings"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5)) 
+  
+
+
+```
+The figure above shows the average number of people boarding into the Austin Metro system divided by month, day of the week, and the time of the day. The hour of peak boarding tends to stay fairly similar across all 7 days of the week, being towards the late evening. A potential reason that Mondays in September tend to have less average people boarding is because Labor Day always falls on the first Monday of September, meaning that much less people are going to be commuting to school and work. Similarly, boarding in November being down on Wednesday, Thursday, and Friday is likely because of Thanksgiving being traditionally celebrated around that time, limiting foot traffic and use of public transit.
+
+*Question 2*
+```{r}
+ggplot(metro, aes(x = temperature, y = boarding, color = weekend)) +
+  geom_point(alpha = 0.6, size = 1) +
+  facet_wrap(~hour_of_day, ncol = 4) +
+   labs(
+    title = "Boardings per Temperature by Hour of the Day, divided by Weekday/Weekend",
+    x = "Temperature",
+    y = "Number of Boardings",
+    color = "Weekend Status") +
+  theme(plot.title = element_text(hjust = 0.5, size = 5)) +
+  theme_bw()
+
+```
+The figure illustrates the relationship between temperature and the average number of boardings for UT students riding the bus. At a glance, it does appear that temperature doesn't have a significant impact on ridership. It is only at extreme temperatures where we begin to see a difference in ridership, particularly during the hotter parts of the day. 
+
+***Problem 4***
+
+*Part A*
+```{r}
+topSongs <- music |>
+  group_by(performer, song) |>
+  summarize(count = n(), .groups = "drop") |>
+  arrange(desc(count)) |>
+  slice_head(n = 10)
+
+
+
+
+```
+
+
+
+
